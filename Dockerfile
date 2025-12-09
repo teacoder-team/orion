@@ -26,6 +26,6 @@ COPY --from=builder /app/app .
 RUN chown -R appuser:appuser /app
 USER appuser
 
-EXPOSE 14704
+EXPOSE 14703
 
 CMD ["./app"]
