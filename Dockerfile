@@ -1,24 +1,31 @@
-FROM golang:1.23-alpine as builder
+FROM golang:1.23-alpine AS builder
+
+ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
+
+RUN apk add --no-cache git
 
 WORKDIR /app
 
-COPY go.mod ./
-COPY go.sum ./
-
-RUN go mod tidy
+COPY go.mod go.sum ./
+RUN go mod download
 
 COPY . .
 
-RUN go build -o main ./cmd/main.go
+RUN go build -o app ./cmd/main.go
 
 FROM alpine:latest
 
-WORKDIR /root/
+RUN apk --no-cache add ca-certificates
 
-COPY --from=builder /app/main .
+RUN adduser -D -g '' appuser
 
-COPY .env .env
+WORKDIR /app
+
+COPY --from=builder /app/app .
+
+RUN chown -R appuser:appuser /app
+USER appuser
 
 EXPOSE 14704
 
-CMD ["./main"]
+CMD ["./app"]
