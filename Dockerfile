@@ -1,7 +1,5 @@
 FROM golang:1.23-alpine AS builder
 
-ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
-
 RUN apk add --no-cache git
 
 WORKDIR /app
@@ -11,19 +9,18 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o app ./cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o app ./cmd/main.go
 
-FROM alpine:latest
+FROM alpine:3.20
 
-RUN apk --no-cache add ca-certificates
+RUN apk --no-cache add ca-certificates tzdata
 
 RUN adduser -D -g '' appuser
-
 WORKDIR /app
 
 COPY --from=builder /app/app .
 
-RUN chown -R appuser:appuser /app
+RUN chown appuser:appuser /app/app
 USER appuser
 
 EXPOSE 14703
